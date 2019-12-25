@@ -12,7 +12,7 @@ RUN chmod -R +x /usr/local/bin/dockerfile && ln -s /usr/local/bin/dockerfile/fun
 RUN  wget -q https://www.postgresql.org/media/keys/ACCC4CF8.asc -O - | apt-key add - && \
      sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" >> /etc/apt/sources.list.d/pgdg.list' && \
      apt-get update && \
-     apt-get install -y libffi-dev libssl-dev openssh-server
+     apt-get install -y bzip2 gzip pigz libffi-dev libssl-dev openssh-server rsync
 
 {{ #PG_CLIENT_LATEST }}
 RUN  apt-get install -y postgresql-client-{{ PG_CLIENT_VERSION }}
@@ -58,8 +58,6 @@ ENV REPLICATION_HOST localhost
 ENV POSTGRES_USER postgres
 ENV POSTGRES_PASSWORD password
 ENV POSTGRES_DB postgres
-
-RUN apt-get install -y $COMPRESSION
 
 EXPOSE 22
 
