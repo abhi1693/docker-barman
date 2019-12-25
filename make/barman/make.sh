@@ -10,5 +10,11 @@ for VALS in "BARMAN_VERSION=2.3 BARMAN_PACKAGE_VERSION=2.3-2.pgdg90+1"\
         FILE_TO="./src/Barman-$BARMAN_VERSION-Postgres-$PG_CLIENT_VERSION.Dockerfile"
 
         template $FILE_FROM $FILE_TO $VALS
+
+        echo ">>>> Build Docker Image for $FILE_TO"
+        docker build -f "$FILE_TO" -t "abhi1693/docker-barman:barman-$BARMAN_VERSION-postgres-$PG_CLIENT_VERSION" ./src
+
+        echo ">>>> Push Docker Image to hub.docker.com"
+        docker push "abhi1693/docker-barman:barman-$BARMAN_VERSION-postgres-$PG_CLIENT_VERSION"
     done
 done
