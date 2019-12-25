@@ -9,11 +9,12 @@ echo ">>> Checking all configurations"
 [[ "$POSTGRES_PASSWORD" != "" ]] || ( echo 'Variable POSTGRES_PASSWORD is not set!' ;exit 3 )
 [[ "$POSTGRES_DB" != "" ]] || ( echo 'Variable POSTGRES_DB is not set!' ;exit 4 )
 
-echo ">>> Configuring barman for streaming replication"
+if [[ "$BACKUP_METHOD" == "postgres" ]]; then
+  echo ">>> Configuring barman for streaming replication"
 echo "
 [$UPSTREAM_NAME]
 description =  'Cluster $UPSTREAM_NAME replication'
-backup_method = postgres
+backup_method = $BACKUP_METHOD
 streaming_archiver = on
 streaming_archiver_name = barman_receive_wal
 streaming_archiver_batch_size = 50
@@ -23,6 +24,20 @@ slot_name = $REPLICATION_SLOT_NAME
 backup_directory = $BACKUP_DIR
 retention_policy = RECOVERY WINDOW OF $BACKUP_RETENTION_DAYS DAYS
 " >> $UPSTREAM_CONFIG_FILE
+else
+  echo ">>> Configuring barman for incremental replication"
+echo "
+[$UPSTREAM_NAME]
+description =  'Cluster $UPSTREAM_NAME replication'
+backup_method = $BACKUP_METHOD
+conninfo = host=$REPLICATION_HOST dbname=$POSTGRES_DB user=$POSTGRES_USER password=$POSTGRES_PASSWORD port=$REPLICATION_PORT connect_timeout=$POSTGRES_CONNECTION_TIMEOUT
+slot_name = $REPLICATION_SLOT_NAME
+backup_directory = $BACKUP_DIR
+retention_policy = RECOVERY WINDOW OF $BACKUP_RETENTION_DAYS DAYS
+reuse_backup = $REUSE_BACKUP
+ssh_command = $SSH_COMMAND
+" >> $UPSTREAM_CONFIG_FILE
+fi
 
 echo '>>> STARTING SSH (if required)...'
 sshd_start
@@ -32,10 +47,6 @@ echo ">>>>>> Backup schedule is $BACKUP_SCHEDULE"
 echo "$BACKUP_SCHEDULE root barman backup all > /proc/1/fd/1 2> /proc/1/fd/2" >> /etc/cron.d/barman
 chmod 0644 /etc/cron.d/barman
 
-echo '>>> STARTING METRICS SERVER'
-/go/main &
-
 echo '>>> STARTING CRON'
 env >> /etc/environment
 cron -f
-

@@ -46,12 +46,20 @@ ENV NOTVISIBLE "in users profile"
 ENV BACKUP_SCHEDULE "0 0 * * *"
 ENV BACKUP_RETENTION_DAYS "30"
 ENV BACKUP_DIR /var/backups
+ENV BACKUP_METHOD postgres
+ENV SSH_COMMAND "ssh postgres@pgmaster"
+ENV REUSE_BACKUP off
+ENV MINIMUM_REDUNDANCY 0
+ENV COMPRESSION gzip
+ENV LOG_LEVEL INFO
 
 # REQUIRED ENV VARS:
-# ENV REPLICATION_HOST localhost
-# ENV POSTGRES_USER postgres
-# ENV POSTGRES_PASSWORD password
-# ENV POSTGRES_DB monkey_db
+ENV REPLICATION_HOST localhost
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD password
+ENV POSTGRES_DB postgres
+
+RUN apt-get install -y $COMPRESSION
 
 EXPOSE 22
 
@@ -61,9 +69,6 @@ COPY ./barman/configs/barman.conf /etc/barman.conf
 COPY ./barman/configs/upstream.conf $UPSTREAM_CONFIG_FILE
 COPY ./barman/bin /usr/local/bin/barman_docker
 RUN chmod +x /usr/local/bin/barman_docker/* && ls /usr/local/bin/barman_docker
-
-COPY ./barman/metrics /go
-RUN cd /go && go build /go/main.go
 
 VOLUME $BACKUP_DIR
 
